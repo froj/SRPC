@@ -1,0 +1,32 @@
+{
+    "plots": [
+        {
+            "title": "Speed",
+            "subplots": [
+              { "title": "Speed in x [m/s]",
+                "variables": ["x"],
+                "yrange": [0, 2]
+              },
+              { "title": "Speed in y [m/s]",
+                "variables": ["y"],
+                "yrange": [0, 2]
+              },
+              { "title": "Rotational speed [rad/s]",
+                "variables": ["z"]
+              }
+            ],
+            "xrange": [0, 600]
+        }
+    ],
+
+    "default": {
+        "title": "Plot",
+        "xrange": [0, 500],
+        "yrange": "auto",
+        "type": "plot"
+    },
+
+    "frequency": 20,
+    "ip": "192.168.0.101",
+    "port": 10000
+}
