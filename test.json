@@ -35,5 +35,7 @@
         "type": "plot"
     },
 
-    "frequency": 20
+    "frequency": 20,
+    "ip": "10.0.0.20",
+    "port": 10000
 }

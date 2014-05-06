@@ -11,7 +11,6 @@ UDP_PORT = 5000
 
 config = None
 variables = {}
-variable_names = []
 plots = []
 
 class Plot():
@@ -109,6 +108,10 @@ def load_config(path=None):
 
     if not 'frequency' in config:
         exit('error: no frequency specified')
+    if not 'ip' in config:
+        exit('error: no ip specified')
+    if not 'port' in config:
+        exit('error: no port specified')
 
     if 'plots' in config:
         for plot, i in zip(config['plots'], range(0, len(config['plots']))):
@@ -157,30 +160,52 @@ def create_plot_objects():
 def show_plots():
     for plot in plots:
         plot.show()
-        print(plot.figure)
 
-def main():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(('0.0.0.0', UDP_PORT))
-
-
-    while True:
-        data, addr = sock.recvfrom(1024)
-        print(data)
-
-
-load_config()
-create_plot_objects()
-for plot in plots:
-    plot.plot()
-show_plots()
-#plt.show(block=False)
-for i in range(0,100):
-    for var in variables:
-        variables[var].append(i)
+def plot_all():
     for plot in plots:
         plot.plot()
-    time.sleep(1)
+
+def connect():
+    print("Connecting to " + config['ip'] + ":" + str(config['port']))
+    s = socket.socket()
+    s.connect((config['ip'], config['port']))
+    for var in variables:
+        print(var)
+        s.sendall(var.encode('ascii') + b'\n')
+    s.sendall(str(config['frequency']).encode('ascii') + b'\n')
+    s.close()
+    print("Config sent to server.")
+
+def update_variables(data):
+    data = data.decode('ascii')
+    incoming = data.split('\n')
+    incoming_split = []
+    for line in incoming:
+        incoming_split.append(line.split(' '))
+    for variable_hash in incoming_split:
+        if variable_hash[0] in variables and len(variable_hash) > 1:
+            variables[variable_hash[0]] = variable_hash[1]
 
 
+def main():
+    # load configuration from .json
+    load_config()
+    create_plot_objects()
+    # connect via TCP and send config
+    connect()
 
+    show_plots()
+
+    # listen on UDP
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('0.0.0.0', config['port']))
+
+    # main loop
+    while True:
+        data, addr = sock.recvfrom(4096)
+        update_variables(data)
+        plot_all()
+
+
+if __name__ == "__main__":
+    main()
