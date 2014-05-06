@@ -1,0 +1,39 @@
+{
+    "plots": [
+        {
+            "title": "Speed",
+            "subplots": [
+              { "title": "Speed in x [m/s]",
+                "variables": ["vx"],
+                "yrange": [0, 2]
+              },
+              { "title": "Speed in y [m/s]",
+                "variables": ["vy"],
+                "yrange": [0, 2]
+              },
+              { "title": "Rotational speed [rad/s]",
+                "variables": ["omega"]
+              }
+            ],
+            "xrange": [0, 600]
+        },
+        {
+            "title": "Position",
+            "variables": ["x", "y"],
+            "xrange": [0, 3000],
+            "yrange": [0, 2000]
+        },
+        {
+            "variables": ["42"]
+        }
+    ],
+
+    "default": {
+        "title": "Plot",
+        "xrange": [0, 500],
+        "yrange": "auto",
+        "type": "plot"
+    },
+
+    "frequency": 20
+}

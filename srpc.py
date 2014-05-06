@@ -1,0 +1,186 @@
+#! /usr/bin/python
+
+import socket
+import json
+import sys
+from sys import exit
+import matplotlib.pyplot as plt
+import time
+
+UDP_PORT = 5000
+
+config = None
+variables = {}
+variable_names = []
+plots = []
+
+class Plot():
+    def __init__(self):
+        self.figure = None
+        self.subplots = []
+
+    def configure(self, cfg):
+        self.figure, axes = plt.subplots(len(cfg['subplots']))
+        print("create subplots")
+        self.figure.suptitle(str(cfg['title']))
+
+        if len(cfg['subplots']) == 1:
+            axes = [axes]
+
+        for subplot_cfg, axis in zip(cfg['subplots'], axes):
+            subplot_obj = Subplot()
+            subplot_obj.axis = axis
+            subplot_obj.variables = subplot_cfg['variables']
+            subplot_obj.range_x = subplot_cfg['xrange']
+            subplot_obj.range_y = subplot_cfg['yrange']
+            subplot_obj.plot_type = subplot_cfg['type']
+            subplot_obj.axis.set_title(str(subplot_cfg['title']))
+            subplot_obj.setup()
+            self.subplots.append(subplot_obj)
+            for variable in subplot_cfg['variables']:
+                variables[variable] = []
+
+    def plot(self):
+        for subplot in self.subplots:
+            subplot.plot()
+        self.figure.canvas.draw()
+        print("draw figure")
+
+    def show(self):
+        self.figure.show()
+
+    def close(self):
+        plt.close(self.figure)
+
+class Subplot():
+    def __init__(self):
+        self.axis = None
+        self.lines = []
+        self.variables = []
+        self.range_x = []
+        self.range_y = []
+        self.plot_type = None
+
+    def setup(self):
+        if len(self.range_x) == 2:
+            self.axis.set_xlim(self.range_x)
+        if len(self.range_y) == 2:
+            self.axis.set_ylim(self.range_y)
+
+        if self.plot_type == 'plot':
+            for variable in self.variables:
+                new_line = self.axis.plot(0, label = variable)
+                print("new line")
+                self.lines.append(new_line[0])
+
+    def plot(self):
+        if self.plot_type == 'plot':
+            delta_x_range = self.range_x[1] - self.range_x[0]
+            for variable, line in zip(self.variables, self.lines):
+                if len(variables[variable]) < delta_x_range:
+                    line.set_data(range(0, len(variables[variable])),
+                                  variables[variable])
+                    print("set data")
+                else:
+                    line.set_data(range(0, delta_x_range),
+                                  variables[variable][-delta_x_range:])
+                    print("set data " + str(delta_x_range))
+
+
+
+def load_config(path=None):
+    global config
+    if path is None:
+        config = json.load(open(sys.argv[1]))
+    else:
+        config = json.load(open(path))
+
+    if 'default' in config:
+        if not 'title' in config['default']:
+            exit('error: no default title specified')
+        if not 'xrange' in config['default']:
+            exit('error: no default xrange specified')
+        if not 'yrange' in config['default']:
+            exit('error: no default yrange specified')
+        if not 'type' in config['default']:
+            exit('error: no default type specified')
+    else:
+        exit('error: no default values specified')
+
+    if not 'frequency' in config:
+        exit('error: no frequency specified')
+
+    if 'plots' in config:
+        for plot, i in zip(config['plots'], range(0, len(config['plots']))):
+            if not 'title' in plot:
+                plot['title'] = config['default']['title'] + str(i)
+            if not 'xrange' in plot:
+                plot['xrange'] = config['default']['xrange']
+            if not 'yrange' in plot:
+                plot['yrange'] = config['default']['yrange']
+            if not 'type' in plot:
+                plot['type'] = config['default']['type']
+            if not 'subplots' in plot:
+                new_subplots = []
+                new_subplot = {}
+                new_subplot['title'] = plot['title']
+                new_subplot['xrange'] = plot['xrange']
+                new_subplot['yrange'] = plot['yrange']
+                new_subplot['type'] = plot['type']
+                if 'variables' in plot:
+                    new_subplot['variables'] = plot['variables']
+                else:
+                    exit('error: no variables for ' + str(plot['title']))
+                new_subplots.append(new_subplot)
+                plot['subplots'] = new_subplots
+
+            for subplot, j in zip(plot['subplots'], range(0, len(plot['subplots']))):
+                if not 'title' in subplot:
+                    subplot['title'] = plot['title'] + '_' + str(j)
+                if not 'xrange' in subplot:
+                    subplot['xrange'] = plot['xrange']
+                if not 'yrange' in subplot:
+                    subplot['yrange'] = plot['yrange']
+                if not 'type' in subplot:
+                    subplot['type'] = plot['type']
+                if not 'variables' in subplot:
+                    exit('error: no variables for ' + str(subplot['title']))
+    print(config)
+
+
+def create_plot_objects():
+    for plot_cfg in config['plots']:
+        new_plot = Plot()
+        new_plot.configure(plot_cfg)
+        plots.append(new_plot)
+
+def show_plots():
+    for plot in plots:
+        plot.show()
+        print(plot.figure)
+
+def main():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('0.0.0.0', UDP_PORT))
+
+
+    while True:
+        data, addr = sock.recvfrom(1024)
+        print(data)
+
+
+load_config()
+create_plot_objects()
+for plot in plots:
+    plot.plot()
+show_plots()
+#plt.show(block=False)
+for i in range(0,100):
+    for var in variables:
+        variables[var].append(i)
+    for plot in plots:
+        plot.plot()
+    time.sleep(1)
+
+
+
