@@ -1,9 +1,11 @@
-#! /usr/bin/python
+#! /usr/bin/python2
 
 import socket
 import json
 import sys
 from sys import exit
+import matplotlib
+matplotlib.use("GTK")
 import matplotlib.pyplot as plt
 import time
 
@@ -75,15 +77,39 @@ class Subplot():
     def plot(self):
         if self.plot_type == 'plot':
             delta_x_range = self.range_x[1] - self.range_x[0]
+
+            x_max = max([len(variables[var]) for var in self.variables])
+            if x_max > delta_x_range:
+                self.axis.set_xlim([x_max - delta_x_range, x_max])
+                print("x_min: " + str(x_max - delta_x_range))
+                print("x_max: " + str(x_max))
+                for var in self.variables:
+                    print(variables[var])
+
             for variable, line in zip(self.variables, self.lines):
                 if len(variables[variable]) < delta_x_range:
                     line.set_data(range(0, len(variables[variable])),
                                   variables[variable])
                     print("set data")
                 else:
-                    line.set_data(range(0, delta_x_range),
+                    line.set_data(range(x_max - delta_x_range, x_max),
                                   variables[variable][-delta_x_range:])
                     print("set data " + str(delta_x_range))
+
+
+
+            if self.range_y == 'auto':
+                try:
+                    y_max = max([max(variables[var][-delta_x_range:]) for var in self.variables])
+                    y_min = min([min(variables[var][-delta_x_range:]) for var in self.variables])
+                    self.axis.set_ylim([y_min, y_max])
+                    print("y_min: " + str(y_min))
+                    print("y_max: " + str(y_max))
+                except:
+                    # no fucks given when list is empty
+                    pass
+
+
 
 
 

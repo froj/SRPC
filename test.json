@@ -30,7 +30,7 @@
 
     "default": {
         "title": "Plot",
-        "xrange": [0, 500],
+        "xrange": [0, 20],
         "yrange": "auto",
         "type": "plot"
     },
